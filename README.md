@@ -36,36 +36,10 @@ PROJECT_MS는 **Unity 6**와 **FishNet** 네트워킹 프레임워크를 기반�
   - Survival: 제한 시간 동안 생존 및 퀘스트 완료
   - Imposter: 모든 Survival 제거
 
-#### 🌐 최첨단 멀티플레이어
-- **Steam P2P/Dedicated Server** 하이브리드 네트워킹
-- **실시간 상태 동기화**: 플레이어 위치, 인벤토리, 게임 상태
-- **낮은 지연시간**: FishNet의 예측/보간 시스템 활용
-- **자동 매치메이킹**: Steam 로비 시스템 통합
-
 #### 🎨 몰입형 게임 경험
 - **Universal Render Pipeline (URP)** 기반 고품질 그래픽
 - **Cinemachine** 카메라 시스템으로 부드러운 시점 전환
 - **실시간 조명 및 그림자**: 분위기 있는 환경 연출
-
-<details>
-<summary>🔧 기술적 혁신 다이어그램</summary>
-
-```mermaid
-graph TD
-    A[Unity 6000] --> B[최신 렌더링 파이프라인]
-    A --> C[C# 9.0+ 기능 활용]
-    A --> D[Job System 통합]
-    
-    E[FishNet Pro] --> F[고급 네트워킹 기능]
-    E --> G[커스텀 Transport Layer]
-    E --> H[최적화된 동기화]
-    
-    I[Steam Integration] --> J[매치메이킹]
-    I --> K[친구 시스템]
-    I --> L[업적/통계]
-```
-
-</details>
 
 ---
 
