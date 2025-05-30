@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🧩 Sunset Survival - 주요 시스템 소개</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #1c1c1c, #3e3e3e);
+      color: #fff;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      gap: 30px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #ffdd57;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease;
+      position: relative;
+      border: 2px solid transparent;
+    }
+    .card:hover {
+      transform: scale(1.03);
+      border-color: #ffdd57;
+    }
+    .icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.4rem;
+    }
+    .card p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .features {
+      margin-top: 15px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .features li {
+      list-style: square;
+      margin-left: 20px;
+    }
+    .quest { border-left: 6px solid #9b59b6; }
+    .crafting { border-left: 6px solid #e74c3c; }
+    .inventory { border-left: 6px solid #3498db; }
+    .daynight { border-left: 6px solid #2c3e50; }
+    @media (max-width: 768px) {
+      h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧩 Sunset Survival - 주요 시스템 소개</h1>
+    <div class="grid">
+      <div class="card quest">
+        <div class="icon">📜</div>
+        <h2>퀘스트 시스템</h2>
+        <p>계층형 구조로 구성된 퀘스트 시스템은 다양한 태스크 유형과 액션 타입을 통해 게임 진행을 유도합니다.</p>
+        <ul class="features">
+          <li>계층형 구조</li>
+          <li>진행도 저장</li>
+          <li>퀘스트 저장소 연동</li>
+          <li>태스크 유형: Kill, Interact, Pickup 등</li>
+        </ul>
+      </div>
+      <div class="card crafting">
+        <div class="icon">⚒️</div>
+        <h2>제작 시스템</h2>
+        <p>레시피 기반 제작 시스템으로, 필요한 재료가 갖춰지면 실시간 검증을 통해 결과물을 생성합니다.</p>
+        <ul class="features">
+          <li>재료 검증 및 소비</li>
+          <li>실시간 UI 업데이트</li>
+          <li>퀘스트 연동</li>
+          <li>인벤토리 완전 연동</li>
+        </ul>
+      </div>
+      <div class="card inventory">
+        <div class="icon">📦</div>
+        <h2>인벤토리 시스템</h2>
+        <p>모듈형 아키텍처로 구성된 인벤토리는 장비/아이템의 저장, 드래그 앤 드롭, 필터링 등을 제공합니다.</p>
+        <ul class="features">
+          <li>드래그 앤 드롭 기능</li>
+          <li>장비 시스템 연동</li>
+          <li>아이템 내구도 관리</li>
+          <li>다른 시스템과의 연동 (퀘스트/제작)</li>
+        </ul>
+      </div>
+      <div class="card daynight">
+        <div class="icon">🌅</div>
+        <h2>낮/밤 시스템</h2>
+        <p>게임 내 시간 흐름을 기반으로 시각 효과와 사운드가 자동으로 전환되며, 밤에는 살인마가 활약합니다.</p>
+        <ul class="features">
+          <li>24시간 시간 시스템</li>
+          <li>조명 그라데이션 및 BGM 전환</li>
+          <li>SyncVar 기반 네트워크 동기화</li>
+          <li>밤에 시야 제한 기능</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
