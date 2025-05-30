@@ -947,6 +947,690 @@ InvalidKeyException: key not found
 
 </details>
 
+<details>
+<summary>🌐 네트워킹 시스템 문제 해결</summary>
+
+### **FishNet 네트워킹 프레임워크 관련 이슈**
+
+#### **문제 상황: NetworkBehaviour 초기화 실패**
+
+**증상**: NetworkBehaviour 컴포넌트가 제대로 초기화되지 않아 RPC 호출이 실패하거나 동기화가 되지 않는 문제
+
+**원인 분석**:
+- `OnStartNetwork()` 메서드에서 필수 컴포넌트 초기화 누락
+- NetworkObject가 제대로 스폰되지 않음
+- 클라이언트와 서버 간의 초기화 순서 문제
+
+**해결 방법**:
+```csharp
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs 참조
+public override void OnStartNetwork()
+{
+    base.OnStartNetwork();
+
+    // 필수 컴포넌트 초기화
+    InteractionHandler = GetComponent<InteractionHandler>();
+    CharacterController = GetComponent<CharacterController>();
+    Animator = GetComponentInChildren<Animator>();
+
+    // NetworkObject 유효성 검증
+    if (!NetworkObject.IsValid)
+    {
+        Debug.LogError("NetworkObject is not valid!");
+        return;
+    }
+}
+```
+
+**예방 조치**:
+- NetworkBehaviour 상속 클래스에서 항상 `base.OnStartNetwork()` 호출
+- 네트워크 관련 초기화는 `OnStartClient()` 또는 `OnStartServer()`에서 수행
+- NetworkObject의 유효성을 항상 검증
+
+#### **문제 상황: RPC 호출 실패**
+
+**증상**: ServerRpc 또는 ObserversRpc 호출이 실행되지 않거나 예외 발생
+
+```csharp
+// 올바른 RPC 구현 예시
+[ServerRpc(RequireOwnership = false)]
+public void TakeDamage(float damage, NetworkConnection conn = null)
+{
+    if (isDead) return;
+
+    // 네트워크 연결 상태 확인
+    if (!InstanceFinder.IsServerStarted)
+    {
+        Debug.LogWarning("Server is not started, cannot process damage");
+        return;
+    }
+
+    Health.Subtract(damage);
+
+    if (Health.Current.Value <= 0 && conn != null)
+    {
+        NetworkGameSystem.Instance.UpdatePlayerKillCount(conn);
+    }
+}
+```
+
+### **클라이언트-서버 동기화 문제**
+
+#### **문제 상황: 네트워크 타입 전환 실패**
+
+**증상**: TCP/UDP에서 Steam P2P로 전환 시 연결이 실패하거나 불안정
+
+**원인 분석**:
+```csharp
+// Assets/Scripts/4. Manager/Core/NetworkManagerEx.cs 참조
+public void OnValidate()
+{
+    if (networkManagerTCP_UDP == null || networkManagerSteam == null)
+        return;
+
+    if(Type == NetworkType.TCP_UDP)
+    {
+        networkManagerTCP_UDP.gameObject.SetActive(true);
+        networkManagerSteam.gameObject.SetActive(false);
+    }
+    else
+    {
+        networkManagerTCP_UDP.gameObject.SetActive(false);
+        networkManagerSteam.gameObject.SetActive(true);
+    }
+}
+```
+
+**해결 방법**:
+- 네트워크 타입 변경 전 기존 연결 완전 종료
+- Steam 초기화 상태 확인 후 P2P 연결 시도
+- 네트워크 매니저 인스턴스 중복 방지
+
+</details>
+
+<details>
+<summary>🎮 Steam 통합 문제 해결</summary>
+
+### **Steam API 초기화 실패**
+
+#### **문제 상황: SteamAPI.Init() 실패**
+
+**증상**: Steam 클라이언트가 실행되지 않았거나 Steam API 초기화가 실패하여 멀티플레이어 기능 사용 불가
+
+**원인 분석**:
+- Steam 클라이언트가 실행되지 않음
+- steam_appid.txt 파일 누락 또는 잘못된 App ID
+- Steam 개발자 계정 권한 문제
+
+**해결 방법**:
+```csharp
+// Assets/Scripts/4. Manager/Core/SteamManagerEx.cs 참조
+public void Init()
+{
+    if(Managers.Network.Type != NetworkType.Steam) return;
+
+    FishySteamworks = Object.FindAnyObjectByType<FishySteamworks.FishySteamworks>();
+
+    if(!SteamAPI.Init())
+    {
+        // 에러 UI 표시
+        Managers.Resource.LoadAsync<GameObject>("UI/Utility/ErrorUI.prefab", (obj) =>
+        {
+            Object.Instantiate(obj);
+        });
+        return;
+    }
+
+    RegisterCallbacks();
+}
+```
+
+**예방 조치**:
+- 프로젝트 루트에 올바른 App ID가 포함된 `steam_appid.txt` 파일 배치
+- Steam 클라이언트 실행 상태 확인 로직 추가
+- 개발 환경에서 Steam SDK Redistributable 설치
+
+### **로비 생성 및 참가 문제**
+
+#### **문제 상황: 로비 생성 실패**
+
+**증상**: `SteamMatchmaking.CreateLobby()` 호출 후 콜백에서 실패 결과 반환
+
+**원인 분석**:
+```csharp
+private void OnLobbyCreated(LobbyCreated_t callback)
+{
+    if(callback.m_eResult != EResult.k_EResultOK)
+    {
+        Debug.LogError("Lobby 생성 실패");
+        return;
+    }
+
+    CurrentLobbyId = callback.m_ulSteamIDLobby;
+    // 로비 데이터 설정
+    SteamMatchmaking.SetLobbyData(new CSteamID(CurrentLobbyId), HostAddressKey, SteamUser.GetSteamID().ToString());
+}
+```
+
+**해결 방법**:
+- Steam 네트워크 연결 상태 확인
+- 로비 타입 설정 검토 (Public, Private, FriendsOnly)
+- 최대 플레이어 수 제한 확인
+
+#### **문제 상황: 로비 검색 결과 없음**
+
+**증상**: `RequestLobbyListAsync()` 호출 시 빈 결과 반환
+
+**원인 분석**:
+- 로비 필터 설정 문제
+- 네트워크 지역 제한
+- 로비 태그 불일치
+
+**해결 방법**:
+```csharp
+public async Task<List<LobbyInfo>> RequestLobbyListAsync()
+{
+    _completionSource = new TaskCompletionSource<List<LobbyInfo>>();
+
+    // 올바른 태그 필터 설정
+    SteamMatchmaking.AddRequestLobbyListStringFilter("tag", "ProjectMS", ELobbyComparison.k_ELobbyComparisonEqual);
+
+    SteamAPICall_t handle = SteamMatchmaking.RequestLobbyList();
+    var callResult = CallResult<LobbyMatchList_t>.Create(OnLobbyListReceived);
+    callResult.Set(handle);
+
+    return await _completionSource.Task;
+}
+```
+
+</details>
+
+<details>
+<summary>📦 리소스 관리 문제 해결</summary>
+
+### **Addressables 시스템 로딩 실패**
+
+#### **문제 상황: LoadAssetAsync 실패**
+
+**증상**: Addressables.LoadAssetAsync 호출 시 AsyncOperationStatus.Failed 반환
+
+**원인 분석**:
+- 잘못된 에셋 주소 또는 키
+- Addressables 그룹 설정 오류
+- 에셋 번들 빌드 문제
+
+**해결 방법**:
+```csharp
+// Assets/Scripts/4. Manager/Core/ResourceManager.cs 참조
+public void LoadAsync<T>(string address, Action<T> callback = null) where T : UnityEngine.Object
+{
+    // 이미 로드된 핸들이 있는지 확인
+    if (_resources.TryGetValue(address, out Object obj))
+    {
+        callback?.Invoke(obj as T);
+        return;
+    }
+
+    // 새로 로드
+    AsyncOperationHandle<T> newHandle = Addressables.LoadAssetAsync<T>(address);
+    newHandle.Completed += (op) => {
+        if (op.Status == AsyncOperationStatus.Succeeded)
+        {
+            if (!_resources.ContainsKey(address))
+                _resources.Add(address, op.Result);
+            callback?.Invoke(op.Result);
+            Debug.Log($"로드 성공 : {address}");
+        }
+        else
+        {
+            Debug.LogError($"로드 실패 : {address}");
+        }
+    };
+}
+```
+
+**예방 조치**:
+- Addressables Groups 창에서 에셋 주소 확인
+- 빌드 전 Addressables 콘텐츠 빌드 수행
+- 에셋 참조 유효성 검증 로직 추가
+
+### **메모리 누수 및 성능 문제**
+
+#### **문제 상황: Addressables 핸들 해제 누락**
+
+**증상**: 메모리 사용량이 지속적으로 증가하여 성능 저하 발생
+
+**원인 분석**:
+- `Addressables.Release()` 호출 누락
+- 핸들 참조 카운트 관리 오류
+- 순환 참조로 인한 가비지 컬렉션 실패
+
+**해결 방법**:
+```csharp
+public void Clear()
+{
+    foreach (var handle in _resources.Values)
+    {
+        Addressables.Release(handle);
+    }
+    _resources.Clear();
+}
+
+public void Release(Object obj)
+{
+    if (_resources.ContainsKey(obj.name))
+        _resources.Remove(obj.name);
+
+    Addressables.Release(obj);
+}
+```
+
+### **오브젝트 풀링 시스템 오류**
+
+#### **문제 상황: 풀링된 오브젝트 상태 초기화 실패**
+
+**증상**: 풀에서 가져온 오브젝트가 이전 상태를 유지하여 예상과 다르게 동작
+
+**원인 분석**:
+- 오브젝트 반환 시 상태 초기화 누락
+- 풀링 대상 오브젝트 식별 오류
+- 컴포넌트 상태 리셋 로직 부재
+
+**해결 방법**:
+```csharp
+// PoolManager 구현 예시
+public GameObject Get(GameObject prefab, Transform parent = null)
+{
+    GameObject obj = GetFromPool(prefab);
+    if (obj == null)
+        obj = Object.Instantiate(prefab, parent);
+
+    // 오브젝트 상태 초기화
+    ResetObjectState(obj);
+    return obj;
+}
+
+private void ResetObjectState(GameObject obj)
+{
+    // 위치, 회전, 스케일 초기화
+    obj.transform.localPosition = Vector3.zero;
+    obj.transform.localRotation = Quaternion.identity;
+    obj.transform.localScale = Vector3.one;
+
+    // 컴포넌트별 상태 초기화
+    var poolable = obj.GetComponent<IPoolable>();
+    poolable?.OnPoolGet();
+}
+```
+
+</details>
+
+<details>
+<summary>🎮 플레이어 시스템 문제 해결</summary>
+
+### **인벤토리 시스템 동기화 문제**
+
+#### **문제 상황: 인벤토리 아이템 동기화 실패**
+
+**증상**: 클라이언트 간 인벤토리 상태가 일치하지 않아 아이템 중복 또는 손실 발생
+
+**원인 분석**:
+- 인벤토리 데이터 네트워크 동기화 누락
+- 아이템 추가/제거 시 서버 검증 부재
+- 클라이언트 예측과 서버 권한 충돌
+
+**해결 방법**:
+```csharp
+// 서버 권한 기반 인벤토리 관리
+[ServerRpc]
+public void AddItemToInventory(string itemId, int count)
+{
+    if (Inventory.CanAddItem(itemId, count))
+    {
+        Inventory.AddItem(itemId, count);
+        // 모든 클라이언트에 동기화
+        UpdateInventoryRpc(Inventory.GetSerializedData());
+    }
+}
+
+[ObserversRpc]
+private void UpdateInventoryRpc(InventoryData data)
+{
+    if (!IsOwner) return;
+
+    Inventory.DeserializeData(data);
+    onInventoryChanged?.Invoke();
+}
+```
+
+### **체력/스태미나 시스템 버그**
+
+#### **문제 상황: 리소스 값 동기화 오류**
+
+**증상**: 체력이나 스태미나 값이 클라이언트와 서버 간에 다르게 표시됨
+
+**원인 분석**:
+```csharp
+// AlivePlayer.cs의 리소스 관리
+[field: SerializeField] public HealthResource Health {get; private set;}
+[field: SerializeField] public StaminaResource Stamina {get; private set;}
+
+public void OnTakeDamage(float prev, float next, bool asServer)
+{
+    if(prev > next)
+    {
+        onDamaged?.Invoke();
+        Managers.Sound.Play(ouchSound);
+
+        if(next <= 0)
+        {
+            isDead = true;
+            onDead?.Invoke();
+        }
+    }
+}
+```
+
+**해결 방법**:
+- SyncVar를 사용한 리소스 값 동기화
+- 서버에서만 리소스 값 변경 허용
+- 클라이언트 예측 및 서버 보정 구현
+
+</details>
+
+<details>
+<summary>🖥️ UI 시스템 문제 해결</summary>
+
+### **UI 매니저 관련 문제**
+
+#### **문제 상황: 팝업 스택 관리 오류**
+
+**증상**: 팝업 UI가 올바른 순서로 표시되지 않거나 닫히지 않는 문제
+
+**원인 분석**:
+```csharp
+// Assets/Scripts/4. Manager/Core/UIManager.cs 참조
+public void ClosePopupUI(PopupUI popup, float time = 0.0f)
+{
+    if (_popupStack.Count == 0)
+        return;
+
+    if (_popupStack.Peek() != popup)
+    {
+        return; // 스택 최상단이 아닌 팝업 닫기 시도
+    }
+
+    ClosePopupUI(time);
+}
+```
+
+**해결 방법**:
+- 팝업 스택 상태 검증 로직 강화
+- UI 계층 구조 명확화
+- Canvas 정렬 순서 자동 관리
+
+#### **문제 상황: Canvas 정렬 순서 충돌**
+
+**증상**: UI 요소들이 예상과 다른 순서로 렌더링되어 사용자 인터페이스가 혼란스러움
+
+**해결 방법**:
+```csharp
+public void SetCanvas(GameObject go, bool pinned = false)
+{
+    Canvas canvas = go.GetOrAddComponent<Canvas>();
+    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+    canvas.overrideSorting = true;
+
+    if (pinned)
+    {
+        canvas.sortingOrder = _pinnedOrder;
+        _pinnedOrder++;
+    }
+    else
+    {
+        canvas.sortingOrder = _order;
+        _order++;
+    }
+}
+```
+
+### **HUD 업데이트 문제**
+
+#### **문제 상황: 실시간 데이터 반영 지연**
+
+**증상**: 플레이어 체력, 스태미나 등의 정보가 HUD에 즉시 반영되지 않음
+
+**원인 분석**:
+- 이벤트 구독/해제 누락
+- UI 업데이트 빈도 제한
+- 데이터 바인딩 오류
+
+**해결 방법**:
+```csharp
+// 이벤트 기반 HUD 업데이트
+public override void OnStartClient()
+{
+    if (!IsOwner) return;
+
+    Health.Current.OnChange += OnHealthChanged;
+    Stamina.Current.OnChange += OnStaminaChanged;
+}
+
+private void OnHealthChanged(float prev, float next, bool asServer)
+{
+    // HUD 업데이트 이벤트 발생
+    onHealthChanged?.Invoke(next / Health.Max.Value);
+}
+```
+
+</details>
+
+<details>
+<summary>🎬 AnimatorOverrideController & NetworkAnimator 동기화 문제 해결</summary>
+
+### **1. 문제 상황 개요**
+
+#### **1.1 핵심 문제**
+
+Unity 멀티플레이어 서바이벌 게임 "PROJECT_MS"에서 `AnimatorOverrideController`와 FishNet의 `NetworkAnimator`를 함께 사용할 때 발생하는 동기화 문제입니다.
+
+#### **1.2 문제 발생 환경**
+
+- **Unity 버전**: 6000.0.47f1
+- **네트워킹 프레임워크**: FishNet 4.6.8R
+- **문제 발생 시점**: 무기 교체 시 애니메이션 동기화
+- **영향 범위**: 멀티플레이어 환경에서 클라이언트 간 애니메이션 불일치
+
+#### **1.3 주요 증상**
+
+```csharp
+// 문제가 발생하는 상황 예시
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs:175-185
+public void ChangeWeapon(WeaponController weapon)
+{
+    if(!IsOwner) return;
+
+    WeaponHandler = weapon;
+    int holdAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.holdAnimation);
+    int attackAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.attackAnimation);
+    float speed = WeaponHandler.attackAnimationSpeed;
+    bool isHolding = WeaponHandler != null;
+
+    ServerRpcOnChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+```
+
+- 클라이언트마다 다른 애니메이션 클립이 재생됨
+- 애니메이션 파라미터 동기화 실패
+- 네트워크 연결 후 초기 애니메이션 상태 불일치
+
+### **2. 기술적 배경**
+
+#### **2.1 AnimatorOverrideController 작동 원리**
+
+`AnimatorOverrideController`는 Unity에서 런타임에 애니메이션 클립을 동적으로 교체할 수 있게 해주는 시스템입니다.
+
+```csharp
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs:28
+[field: SerializeField] public AnimatorOverrideController overrideController { get; private set; }
+```
+
+#### **2.2 FishNet NetworkAnimator 동작 방식**
+
+FishNet의 `NetworkAnimator`는 다음과 같은 방식으로 애니메이션을 동기화합니다:
+
+```csharp
+// Assets/FishNet/Runtime/Generated/Component/NetworkAnimator/NetworkAnimator.cs:295-300
+[SerializeField]
+private bool _clientAuthoritative = true;
+public bool ClientAuthoritative { get { return _clientAuthoritative; } }
+```
+
+#### **2.3 문제의 근본 원인**
+
+- `NetworkAnimator`는 애니메이션 **파라미터**만 동기화
+- **애니메이션 클립 교체**는 동기화되지 않음
+- 각 클라이언트가 서로 다른 `AnimatorOverrideController` 상태를 가질 수 있음
+
+### **3. 발생한 구체적 문제들**
+
+#### **3.1 애니메이션 클립 동기화 실패**
+
+```csharp
+// 클라이언트 A에서 실행
+overrideController["Holding"] = swordHoldAnimation;
+overrideController["Attack"] = swordAttackAnimation;
+
+// 클라이언트 B에서는 여전히 기본 애니메이션이 재생됨
+// NetworkAnimator가 클립 교체를 동기화하지 않기 때문
+```
+
+#### **3.2 파라미터 해시 불일치**
+
+```csharp
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs:195-198
+private void OnChangeWeapon(int holdAnimationIndex, int attackAnimationIndex, float speed, bool isHolding)
+{
+    overrideController["Holding"] = Managers.Data.Animation.GetByIndex(holdAnimationIndex);
+    overrideController["Attack"] = Managers.Data.Animation.GetByIndex(attackAnimationIndex);
+    Animator.SetFloat("AttackSpeed", speed);
+    Animator.SetBool(AnimationData.HoldingParameterHash, isHolding);
+}
+```
+
+### **4. 해결 방법 및 구현**
+
+#### **4.1 수동 동기화 시스템 구현**
+
+`AnimatorOverrideController`의 클립 교체를 직접 동기화하는 시스템을 구현했습니다.
+
+```csharp
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs:175-185
+public void ChangeWeapon(WeaponController weapon)
+{
+    if(!IsOwner) return;
+
+    WeaponHandler = weapon;
+    int holdAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.holdAnimation);
+    int attackAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.attackAnimation);
+    float speed = WeaponHandler.attackAnimationSpeed;
+    bool isHolding = WeaponHandler != null;
+
+    ServerRpcOnChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+```
+
+#### **4.2 RPC 기반 동기화**
+
+```csharp
+// Assets/Scripts/1. Entity/Player/AlivePlayer/AlivePlayer.cs:200-208
+[ServerRpc]
+private void ServerRpcOnChangeWeapon(int holdAnimationIndex, int attackAnimationIndex, float speed, bool isHolding)
+{
+    ObserverRpcChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+
+[ObserversRpc]
+private void ObserverRpcChangeWeapon(int holdAnimationIndex, int attackAnimationIndex, float speed, bool isHolding)
+{
+    OnChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+```
+
+#### **4.3 애니메이션 데이터 관리 시스템**
+
+```csharp
+// Assets/Scripts/4. Manager/Data/AnimationDataManager.cs:75-85
+public int GetIndex(AnimationClip animationClip)
+{
+    if (animationClip == null)
+        return -1;
+
+    // 캐시에서 먼저 찾기
+    if(animationClipToIndex.TryGetValue(animationClip, out int index))
+        return index;
+
+    return -1;
+}
+```
+
+### **5. 성능 최적화 및 모범 사례**
+
+#### **5.1 네트워크 트래픽 최소화**
+
+```csharp
+// AnimationClip 객체 대신 int 인덱스 전송
+// 네트워크 대역폭 사용량 대폭 감소
+int holdAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.holdAnimation);
+int attackAnimationIndex = Managers.Data.Animation.GetIndex(WeaponHandler.attackAnimation);
+```
+
+#### **5.2 동기화 신뢰성 향상**
+
+```csharp
+[ServerRpc]
+private void ServerRpcOnChangeWeapon(int holdAnimationIndex, int attackAnimationIndex, float speed, bool isHolding)
+{
+    // 서버에서 유효성 검증 가능
+    // 치팅 방지 및 데이터 무결성 보장
+    ObserverRpcChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+```
+
+#### **5.3 클라이언트 간 일관성 보장**
+
+```csharp
+[ObserversRpc]
+private void ObserverRpcChangeWeapon(int holdAnimationIndex, int attackAnimationIndex, float speed, bool isHolding)
+{
+    // 모든 클라이언트에서 동일한 메서드 실행
+    // 애니메이션 상태 일관성 보장
+    OnChangeWeapon(holdAnimationIndex, attackAnimationIndex, speed, isHolding);
+}
+```
+
+### **6. 추가 고려사항**
+
+#### **6.1 확장성**
+
+- 새로운 무기 타입 추가 시 동일한 동기화 시스템 재사용 가능
+- 애니메이션 시스템 확장을 위한 모듈화된 구조
+- 다양한 캐릭터 타입 지원
+
+#### **6.2 호환성**
+
+- FishNet 버전 업데이트 대응
+- Unity 버전 변경 영향도 최소화
+- 다른 네트워킹 솔루션과의 호환성 고려
+
+#### **6.3 유지보수**
+
+- 애니메이션 동기화 로직 모듈화
+- 자동화된 테스트 시나리오 구성
+- 문제 발생 시 진단 도구 제공
+
+</details>
+
 ---
 
 ## 🤝 기여 가이드
@@ -969,23 +1653,23 @@ main
 #### 2. 커밋 컨벤션
 
 ```
-✨ Feat: “ ” ⇒ 새로운 기능 추가 시 **:sparkles:**
+✨ Feat: " " ⇒ 새로운 기능 추가 시 **:sparkles:**
 
-🙈 WIP: “ ” ⇒ 일단 작업중이던거 냅다 커밋할 때 **:see_no_evil:**
+🙈 WIP: " " ⇒ 일단 작업중이던거 냅다 커밋할 때 **:see_no_evil:**
 
-⚡️ Add: “ ” ⇒ 일반적인 추가 작업할 때 **:zap:**
+⚡️ Add: " " ⇒ 일반적인 추가 작업할 때 **:zap:**
 
-🐛 Fix: “ ”  ⇒ 버그 수정시 **:bug:**
+🐛 Fix: " "  ⇒ 버그 수정시 **:bug:**
 
-📝 Docs: “ ” ⇒ 주석 추가 시 **:memo:**
+📝 Docs: " " ⇒ 주석 추가 시 **:memo:**
 
-🎨 Style: “ ” ⇒ 줄간격이나 칸정렬 수정 시 **:art:**
+🎨 Style: " " ⇒ 줄간격이나 칸정렬 수정 시 **:art:**
 
-🔨 Refactor: “ ” ⇒ 코드의 구조 / 형식 갈아엎을 때 **:hammer:**
+🔨 Refactor: " " ⇒ 코드의 구조 / 형식 갈아엎을 때 **:hammer:**
 
-✅ Test: “ ” ⇒ 테스트 코드 작성한거 커밋할 때 **:white_check_mark:**
+✅ Test: " " ⇒ 테스트 코드 작성한거 커밋할 때 **:white_check_mark:**
 
-👷 Chore: “ ” ⇒ 코드 기능 구현말고 관리작업(깃허브같은 것)할 때  **:construction_worker:**
+👷 Chore: " " ⇒ 코드 기능 구현말고 관리작업(깃허브같은 것)할 때  **:construction_worker:**
 ```
 
 </details>
