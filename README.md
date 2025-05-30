@@ -473,23 +473,6 @@ sequenceDiagram
 
 </details>
 
-<details>
-<summary>⚡ 네트워크 최적화 기법</summary>
-
-1. **Interest Management**
-   - 거리 기반 업데이트 빈도 조절
-   - 시야 밖 객체 동기화 최소화
-
-2. **Delta Compression**
-   - 변경된 데이터만 전송
-   - 대역폭 사용량 최소화
-
-3. **Object Pooling**
-   - NetworkObject 재사용
-   - 생성/파괴 오버헤드 감소
-
-</details>
-
 ---
 
 ## 🚀 설치 및 실행
@@ -504,15 +487,8 @@ sequenceDiagram
 | **GPU** | GTX 1060 6GB | RTX 3060 |
 | **DirectX** | Version 11 | Version 12 |
 | **Storage** | 10GB | 20GB SSD |
-| **Network** | 광대역 인터넷 | 광대역 인터넷 |
 
 ### 빠른 시작 가이드
-
-#### 🎮 싱글플레이어 테스트
-
-1. `Assets/1. Scene/Title.unity` 열기
-2. Play 버튼 클릭
-3. "Single Player" 선택
 
 #### 🌐 멀티플레이어 테스트
 
@@ -521,8 +497,7 @@ sequenceDiagram
    - 로비 설정 후 "Start"
 
 2. **클라이언트 참가**
-   - "Join Room" 클릭
-   - 로비 목록에서 선택 또는 코드 입력
+   - 로비 목록에서 선택
 
 <details>
 <summary>🔧 개발 환경 설정 상세</summary>
@@ -675,33 +650,6 @@ public static MyManager MyManager { get { return Instance?._myManager ?? null; }
 
 </details>
 
-<details>
-<summary>🐛 디버깅 가이드</summary>
-
-#### 네트워크 디버깅
-
-```csharp
-// 조건부 로깅
-#if UNITY_EDITOR
-    Debug.Log($"[Server] Player {conn.ClientId} performed action");
-#endif
-
-// FishNet 로깅
-InstanceFinder.NetworkManager.LogLevel = LoggingType.Common;
-```
-
-#### 성능 프로파일링
-
-1. **Unity Profiler**
-   - `Window > Analysis > Profiler`
-   - CPU, GPU, Memory, Network 탭 확인
-
-2. **Frame Debugger**
-   - `Window > Analysis > Frame Debugger`
-   - 렌더링 최적화 포인트 찾기
-
-</details>
-
 ---
 
 ## 📚 API 문서
@@ -849,44 +797,6 @@ public class QuestManager : IManager
 ## ⚡ 성능 최적화
 
 <details>
-<summary>🌐 네트워크 최적화</summary>
-
-#### 1. Interest Management 구현
-
-```csharp
-// NetworkObject의 가시성 제어
-public override bool OnCheckObserver(NetworkConnection conn)
-{
-    float distance = Vector3.Distance(transform.position, conn.FirstObject.transform.position);
-    return distance <= MaxVisibilityRange;
-}
-```
-
-#### 2. 동기화 빈도 최적화
-
-```csharp
-// 중요도에 따른 업데이트 빈도 조절
-[SyncVar(SendRate = 0.1f)] // 초당 10회
-private Vector3 _position;
-
-[SyncVar(SendRate = 1f)] // 초당 1회
-private int _health;
-```
-
-#### 3. 데이터 압축
-
-```csharp
-// 커스텀 직렬화로 데이터 크기 최소화
-public void WriteDelta(Writer writer)
-{
-    writer.WriteByte((byte)(_health * 2.55f)); // float → byte
-    writer.WriteVector3(position, 0.1f); // 정밀도 조절
-}
-```
-
-</details>
-
-<details>
 <summary>💾 메모리 최적화</summary>
 
 #### 1. Object Pooling
@@ -964,8 +874,7 @@ public void ReleaseAsset(string key)
 | 빌드 타입 | 용도 | 설정 |
 |----------|------|------|
 | **Development** | 디버깅 | Development Build ✅, Script Debugging ✅ |
-| **Release** | 배포 | IL2CPP, Optimize Mesh Data ✅ |
-| **Profiling** | 성능 분석 | Autoconnect Profiler ✅ |
+| **Release** | 배포 | Mono, Optimize Mesh Data ✅ |
 
 <details>
 <summary>⚙️ Player Settings 구성</summary>
@@ -1000,51 +909,6 @@ YOUR_APP_ID  # 실제 App ID
 .\build.ps1 -Configuration Release -Platform Win64 -SteamUpload
 ```
 
-#### 3. Steam 파이프라인
-
-1. **디포 설정**
-   - 게임 파일 디포
-   - DLC 디포 (선택사항)
-
-2. **브랜치 관리**
-   - `default`: 정식 릴리즈
-   - `beta`: 베타 테스트
-   - `experimental`: 실험적 기능
-
-</details>
-
-<details>
-<summary>📝 버전 관리</summary>
-
-#### Semantic Versioning
-
-```
-MAJOR.MINOR.PATCH
-
-1.0.0 - 정식 출시
-1.1.0 - 새로운 기능 추가
-1.1.1 - 버그 수정
-2.0.0 - 대규모 변경사항
-```
-
-#### 체인지로그 작성
-
-```markdown
-## [1.1.0] - 2024-XX-XX
-
-### Added
-- 새로운 맵 "Abandoned Factory" 추가
-- 크래프팅 레시피 10종 추가
-
-### Changed
-- 네트워크 동기화 성능 개선
-- UI 반응성 향상
-
-### Fixed
-- 인벤토리 동기화 버그 수정
-- 매치메이킹 타임아웃 이슈 해결
-```
-
 </details>
 
 ---
@@ -1068,22 +932,7 @@ Steam API 초기화 실패
 3. 파일 내용이 `480`인지 확인
 4. Steam 재시작
 
-#### 2. 네트워크 동기화 문제
-
-**증상**
-- 다른 플레이어가 보이지 않음
-- 아이템이 동기화되지 않음
-
-**해결 방법**
-```csharp
-// NetworkObject 컴포넌트 확인
-[RequireComponent(typeof(NetworkObject))]
-
-// Scene에 미리 배치된 객체인지 확인
-// Spawn 방식 확인 (Server/Client)
-```
-
-#### 3. Addressables 오류
+#### 2. Addressables 오류
 
 **증상**
 ```
@@ -1095,72 +944,6 @@ InvalidKeyException: key not found
 1. Addressables Groups 창 열기
 2. "Clean Build" → "New Build"
 3. 로컬 서버 실행 확인
-
-</details>
-
-<details>
-<summary>📊 성능 문제</summary>
-
-#### FPS 저하
-
-1. **Profiler 분석**
-   ```
-   Window > Analysis > Profiler
-   - CPU Usage 확인
-   - GPU Usage 확인
-   - 병목 지점 파악
-   ```
-
-2. **최적화 적용**
-   - LOD 설정 확인
-   - 오클루전 컬링 활성화
-   - 불필요한 리얼타임 조명 제거
-
-#### 네트워크 지연
-
-1. **네트워크 통계 확인**
-   ```csharp
-   Debug.Log($"RTT: {conn.GetRoundTripTime()}ms");
-   Debug.Log($"Packet Loss: {conn.GetPacketLoss()}%");
-   ```
-
-2. **최적화 방법**
-   - SendRate 조절
-   - 데이터 압축 적용
-   - Interest Management 구현
-
-</details>
-
-<details>
-<summary>🛠️ 디버깅 도구</summary>
-
-#### 1. 커스텀 디버그 콘솔
-
-```csharp
-public class DebugConsole : MonoBehaviour
-{
-    [ConsoleCommand("spawn", "Spawn an item")]
-    public void SpawnItem(int itemId, int amount = 1)
-    {
-        // 아이템 스폰 로직
-    }
-    
-    [ConsoleCommand("teleport", "Teleport player")]
-    public void TeleportPlayer(float x, float y, float z)
-    {
-        // 텔레포트 로직
-    }
-}
-```
-
-#### 2. 네트워크 시뮬레이션
-
-```
-FishNet > Network Manager > Transporting
-- Simulate Latency: 100ms
-- Simulate Packet Loss: 5%
-- Simulate Out of Order: 10%
-```
 
 </details>
 
@@ -1186,62 +969,26 @@ main
 #### 2. 커밋 컨벤션
 
 ```
-<type>(<scope>): <subject>
+✨ Feat: “ ” ⇒ 새로운 기능 추가 시 **:sparkles:**
 
-feat(inventory): 아이템 정렬 기능 추가
-fix(network): 동기화 지연 문제 해결
-docs(readme): API 문서 업데이트
-style(ui): 버튼 스타일 통일
-refactor(player): 상태 머신 구조 개선
-perf(render): LOD 최적화 적용
-test(quest): 퀘스트 완료 테스트 추가
-```
+🙈 WIP: “ ” ⇒ 일단 작업중이던거 냅다 커밋할 때 **:see_no_evil:**
 
-#### 3. Pull Request 템플릿
+⚡️ Add: “ ” ⇒ 일반적인 추가 작업할 때 **:zap:**
 
-```markdown
-## 변경 사항
-- 주요 변경 내용 설명
+🐛 Fix: “ ”  ⇒ 버그 수정시 **:bug:**
 
-## 관련 이슈
-- Fixes #123
+📝 Docs: “ ” ⇒ 주석 추가 시 **:memo:**
 
-## 테스트 내용
-- [ ] 단위 테스트 통과
-- [ ] 통합 테스트 완료
-- [ ] 멀티플레이어 테스트 완료
+🎨 Style: “ ” ⇒ 줄간격이나 칸정렬 수정 시 **:art:**
 
-## 스크린샷
-(해당되는 경우)
+🔨 Refactor: “ ” ⇒ 코드의 구조 / 형식 갈아엎을 때 **:hammer:**
+
+✅ Test: “ ” ⇒ 테스트 코드 작성한거 커밋할 때 **:white_check_mark:**
+
+👷 Chore: “ ” ⇒ 코드 기능 구현말고 관리작업(깃허브같은 것)할 때  **:construction_worker:**
 ```
 
 </details>
-
-### 코드 리뷰 체크리스트
-
-- [ ] 코드 컨벤션 준수
-- [ ] 적절한 주석 작성
-- [ ] 성능 영향 검토
-- [ ] 네트워크 호환성 확인
-- [ ] 에러 처리 적절성
-- [ ] 메모리 누수 없음
-
----
-
-## 📞 연락처 및 지원
-
-### 기술 지원
-- **이슈 트래커**: [GitHub Issues](https://github.com/yourrepo/issues)
-- **디스코드**: [개발자 커뮤니티](https://discord.gg/xxxxx)
-
-### 라이선스
-본 프로젝트는 [라이선스 타입] 라이선스를 따릅니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
-
-### 크레딧
-- **개발팀**: PROJECT_MS Development Team
-- **Special Thanks**: Unity Technologies, Fish-Networking, Valve Corporation
-
----
 
 <p align="center">
   <i>Built with ❤️ using Unity 6000 and FishNet Pro</i>
