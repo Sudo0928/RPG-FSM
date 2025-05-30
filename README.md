@@ -47,7 +47,8 @@ PROJECT_MS는 **Unity 6000**과 **FishNet Pro** 네트워킹 프레임워크를 
 - **Cinemachine** 카메라 시스템으로 부드러운 시점 전환
 - **실시간 조명 및 그림자**: 분위기 있는 환경 연출
 
-### 기술적 혁신
+<details>
+<summary>🔧 기술적 혁신 다이어그램</summary>
 
 ```mermaid
 graph TD
@@ -64,13 +65,22 @@ graph TD
     I --> L[업적/통계]
 ```
 
+</details>
+
 ---
 
 ## 🎮 핵심 게임플레이 시스템
 
 ### 📦 인벤토리 시스템
 
-#### 아키텍처 설계
+#### 아키텍처 개요
+- **메인 인벤토리**: 10 슬롯
+- **퀵슬롯**: 5 슬롯  
+- **장비 슬롯**: 타입별 분류
+- **실시간 네트워크 동기화**
+
+<details>
+<summary>📋 인벤토리 코드 구조</summary>
 
 ```csharp
 public class Inventory
@@ -102,14 +112,26 @@ public class Inventory
    - 내구도 시스템
    - 아이템 타입별 제약사항
 
-#### 성능 최적화
+</details>
+
+<details>
+<summary>⚡ 성능 최적화 기법</summary>
+
 - **이벤트 기반 업데이트**: 변경 시에만 UI 갱신
 - **참조 카운팅**: 메모리 효율적인 아이템 관리
 - **배치 동기화**: 네트워크 트래픽 최소화
 
+</details>
+
 ### 🤝 상호작용 시스템
 
-#### 핵심 구조
+#### 핵심 기능
+- **거리 기반 우선순위 정렬**
+- **인벤토리 공간 자동 체크**
+- **실시간 네트워크 동기화**
+
+<details>
+<summary>🔧 상호작용 코드 구조</summary>
 
 ```csharp
 public class InteractionHandler : MonoBehaviour
@@ -125,7 +147,10 @@ public class InteractionHandler : MonoBehaviour
 }
 ```
 
-#### 상호작용 가능 객체
+</details>
+
+<details>
+<summary>📋 상호작용 가능 객체</summary>
 
 | 객체 타입 | 설명 | 네트워크 동기화 |
 |----------|------|-----------------|
@@ -134,7 +159,10 @@ public class InteractionHandler : MonoBehaviour
 | `QuestStorageBox` | 퀘스트 아이템 보관함 | ✅ 진행도 공유 |
 | `ItemObject` | 드롭된 아이템 | ✅ 픽업 즉시 동기화 |
 
-#### 상호작용 흐름
+</details>
+
+<details>
+<summary>🔄 상호작용 흐름도</summary>
 
 ```mermaid
 sequenceDiagram
@@ -151,9 +179,18 @@ sequenceDiagram
     N->>I: ObserversRpc 실행
 ```
 
+</details>
+
 ### 📋 퀘스트 시스템
 
-#### 유연한 퀘스트 구조
+#### 퀘스트 카테고리
+1. **수집 퀘스트**: 특정 아이템 수집
+2. **제작 퀘스트**: 아이템 제작
+3. **상호작용 퀘스트**: 특정 객체와 상호작용
+4. **전투 퀘스트**: 적 처치
+
+<details>
+<summary>📋 퀘스트 구조 코드</summary>
 
 ```csharp
 public class Quest
@@ -164,15 +201,7 @@ public class Quest
 }
 ```
 
-#### 퀘스트 카테고리
-
-1. **수집 퀘스트**: 특정 아이템 수집
-2. **제작 퀘스트**: 아이템 제작
-3. **상호작용 퀘스트**: 특정 객체와 상호작용
-4. **전투 퀘스트**: 적 처치
-
 #### 진행 추적 시스템
-
 ```csharp
 public void ReceiveReport(ETaskCategory category, int targetId, int successCount = 1)
 {
@@ -181,9 +210,17 @@ public void ReceiveReport(ETaskCategory category, int targetId, int successCount
 }
 ```
 
+</details>
+
 ### 🔨 제작 시스템
 
-#### 레시피 기반 제작
+#### 핵심 기능
+- **레시피 기반 제작** (최대 3개 재료 조합)
+- **실시간 재료 검증**
+- **네트워크 동기화**
+
+<details>
+<summary>🔧 제작 시스템 코드</summary>
 
 ```csharp
 public class CraftingItemData : ItemData
@@ -214,11 +251,14 @@ public class CraftingItemData : ItemData
    - 제작 시작/완료 이벤트 전파
    - 인벤토리 상태 즉시 반영
 
+</details>
+
 ---
 
 ## 🏗️ 기술 아키텍처
 
-### 시스템 아키텍처 다이어그램
+<details>
+<summary>🏛️ 시스템 아키텍처 다이어그램</summary>
 
 ```mermaid
 graph TB
@@ -271,9 +311,13 @@ graph TB
     N --> G
 ```
 
+</details>
+
 ### 핵심 설계 패턴
 
-#### 1. **Singleton 패턴**
+<details>
+<summary>🔧 Singleton 패턴</summary>
+
 ```csharp
 public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 {
@@ -297,7 +341,11 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
 }
 ```
 
-#### 2. **NetworkSingleton 패턴**
+</details>
+
+<details>
+<summary>🌐 NetworkSingleton 패턴</summary>
+
 ```csharp
 public class NetworkSingleton<T> : NetworkBehaviour where T : NetworkBehaviour
 {
@@ -315,7 +363,11 @@ public class NetworkSingleton<T> : NetworkBehaviour where T : NetworkBehaviour
 }
 ```
 
-#### 3. **State Machine 패턴**
+</details>
+
+<details>
+<summary>🎮 State Machine 패턴</summary>
+
 ```csharp
 public class AlivePlayerStateMachine
 {
@@ -326,7 +378,10 @@ public class AlivePlayerStateMachine
 }
 ```
 
-### 데이터 플로우
+</details>
+
+<details>
+<summary>📊 데이터 플로우</summary>
 
 ```mermaid
 flowchart LR
@@ -341,13 +396,21 @@ flowchart LR
     I --> J[All Clients]
 ```
 
+</details>
+
 ---
 
 ## 🌐 네트워크 시스템
 
 ### FishNet Pro 통합
 
-#### 네트워크 동기화 전략
+#### 주요 기능
+- **NetworkObject 자동 동기화**
+- **SyncVar 실시간 변수 동기화**
+- **RPC 원격 프로시저 호출**
+
+<details>
+<summary>🔧 네트워크 동기화 전략</summary>
 
 1. **NetworkObject 관리**
    ```csharp
@@ -369,9 +432,12 @@ flowchart LR
    - `[ObserversRpc]`: 서버 → 모든 관찰자
    - `[TargetRpc]`: 서버 → 특정 클라이언트
 
+</details>
+
 ### Steam 네트워킹 통합
 
-#### 로비 시스템
+<details>
+<summary>🎮 로비 시스템</summary>
 
 ```csharp
 public class NetworkRoomSystem : NetworkSingleton<NetworkRoomSystem>
@@ -385,7 +451,10 @@ public class NetworkRoomSystem : NetworkSingleton<NetworkRoomSystem>
 }
 ```
 
-#### P2P 연결 관리
+</details>
+
+<details>
+<summary>🔄 P2P 연결 관리</summary>
 
 ```mermaid
 sequenceDiagram
@@ -402,7 +471,10 @@ sequenceDiagram
     Host->>Client: 게임 상태 동기화
 ```
 
-### 네트워크 최적화 기법
+</details>
+
+<details>
+<summary>⚡ 네트워크 최적화 기법</summary>
 
 1. **Interest Management**
    - 거리 기반 업데이트 빈도 조절
@@ -415,6 +487,8 @@ sequenceDiagram
 3. **Object Pooling**
    - NetworkObject 재사용
    - 생성/파괴 오버헤드 감소
+
+</details>
 
 ---
 
@@ -432,7 +506,26 @@ sequenceDiagram
 | **Storage** | 10GB | 20GB SSD |
 | **Network** | 광대역 인터넷 | 광대역 인터넷 |
 
-### 개발 환경 설정
+### 빠른 시작 가이드
+
+#### 🎮 싱글플레이어 테스트
+
+1. `Assets/1. Scene/Title.unity` 열기
+2. Play 버튼 클릭
+3. "Single Player" 선택
+
+#### 🌐 멀티플레이어 테스트
+
+1. **호스트 시작**
+   - "Create Room" 클릭
+   - 로비 설정 후 "Start"
+
+2. **클라이언트 참가**
+   - "Join Room" 클릭
+   - 로비 목록에서 선택 또는 코드 입력
+
+<details>
+<summary>🔧 개발 환경 설정 상세</summary>
 
 #### 1. 필수 소프트웨어 설치
 
@@ -484,31 +577,13 @@ git lfs pull
    - Steam 클라이언트 실행
    - `steam_appid.txt` 확인 (기본값: 480)
 
-### 빠른 시작 가이드
-
-#### 🎮 싱글플레이어 테스트
-
-1. `Assets/1. Scene/Title.unity` 열기
-2. Play 버튼 클릭
-3. "Single Player" 선택
-
-#### 🌐 멀티플레이어 테스트
-
-1. **호스트 시작**
-   - "Create Room" 클릭
-   - 로비 설정 후 "Start"
-
-2. **클라이언트 참가**
-   - "Join Room" 클릭
-   - 로비 목록에서 선택 또는 코드 입력
+</details>
 
 ---
 
 ## 💻 개발 가이드
 
 ### 코드 컨벤션
-
-#### 네이밍 규칙
 
 | 요소 | 규칙 | 예시 |
 |------|------|------|
@@ -519,7 +594,9 @@ git lfs pull
 | **상수** | UPPER_SNAKE_CASE | `MAX_PLAYERS` |
 | **private 필드** | _ + camelCase | `_instance` |
 
-#### 파일 구조
+<details>
+<summary>📁 파일 구조</summary>
+
 ```
 Scripts/
 ├── 1. Entity/          # 게임 객체 (플레이어, 아이템 등)
@@ -532,7 +609,10 @@ Scripts/
 └── Utils/             # 유틸리티
 ```
 
-### 새로운 시스템 추가하기
+</details>
+
+<details>
+<summary>🆕 새로운 시스템 추가하기</summary>
 
 #### 1. NetworkBehaviour 생성
 
@@ -593,7 +673,10 @@ public class MyManager : IManager
 public static MyManager MyManager { get { return Instance?._myManager ?? null; } }
 ```
 
-### 디버깅 가이드
+</details>
+
+<details>
+<summary>🐛 디버깅 가이드</summary>
 
 #### 네트워크 디버깅
 
@@ -617,11 +700,14 @@ InstanceFinder.NetworkManager.LogLevel = LoggingType.Common;
    - `Window > Analysis > Frame Debugger`
    - 렌더링 최적화 포인트 찾기
 
+</details>
+
 ---
 
 ## 📚 API 문서
 
-### 플레이어 시스템
+<details>
+<summary>🎮 플레이어 시스템 API</summary>
 
 #### AlivePlayer
 
@@ -653,7 +739,10 @@ public class AlivePlayer : NetworkBehaviour, IDamageable
 }
 ```
 
-### 인벤토리 API
+</details>
+
+<details>
+<summary>📦 인벤토리 API</summary>
 
 #### Inventory 클래스
 
@@ -696,7 +785,10 @@ public class Storage
 }
 ```
 
-### 네트워크 시스템 API
+</details>
+
+<details>
+<summary>🌐 네트워크 시스템 API</summary>
 
 #### NetworkGameSystem
 
@@ -723,7 +815,10 @@ public class NetworkGameSystem : NetworkSingleton<NetworkGameSystem>
 }
 ```
 
-### 퀘스트 시스템 API
+</details>
+
+<details>
+<summary>📋 퀘스트 시스템 API</summary>
 
 #### QuestManager
 
@@ -747,11 +842,14 @@ public class QuestManager : IManager
 }
 ```
 
+</details>
+
 ---
 
 ## ⚡ 성능 최적화
 
-### 네트워크 최적화
+<details>
+<summary>🌐 네트워크 최적화</summary>
 
 #### 1. Interest Management 구현
 
@@ -786,7 +884,10 @@ public void WriteDelta(Writer writer)
 }
 ```
 
-### 메모리 최적화
+</details>
+
+<details>
+<summary>💾 메모리 최적화</summary>
 
 #### 1. Object Pooling
 
@@ -834,7 +935,10 @@ public void ReleaseAsset(string key)
 }
 ```
 
-### 렌더링 최적화
+</details>
+
+<details>
+<summary>🎨 렌더링 최적화</summary>
 
 #### 1. LOD (Level of Detail) 설정
 - 거리별 메시 품질 조절
@@ -849,13 +953,22 @@ public void ReleaseAsset(string key)
 - GPU Instancing 설정
 - SRP Batcher 활성화
 
+</details>
+
 ---
 
 ## 📦 배포 가이드
 
 ### 빌드 설정
 
-#### 1. Player Settings 구성
+| 빌드 타입 | 용도 | 설정 |
+|----------|------|------|
+| **Development** | 디버깅 | Development Build ✅, Script Debugging ✅ |
+| **Release** | 배포 | IL2CPP, Optimize Mesh Data ✅ |
+| **Profiling** | 성능 분석 | Autoconnect Profiler ✅ |
+
+<details>
+<summary>⚙️ Player Settings 구성</summary>
 
 ```
 Edit > Project Settings > Player
@@ -866,15 +979,10 @@ Edit > Project Settings > Player
 └── Splash Screen: 스플래시 이미지 설정
 ```
 
-#### 2. 빌드 프로파일
+</details>
 
-| 빌드 타입 | 용도 | 설정 |
-|----------|------|------|
-| **Development** | 디버깅 | Development Build ✅, Script Debugging ✅ |
-| **Release** | 배포 | IL2CPP, Optimize Mesh Data ✅ |
-| **Profiling** | 성능 분석 | Autoconnect Profiler ✅ |
-
-### Steam 배포
+<details>
+<summary>🎮 Steam 배포</summary>
 
 #### 1. Steamworks 설정
 
@@ -903,7 +1011,10 @@ YOUR_APP_ID  # 실제 App ID
    - `beta`: 베타 테스트
    - `experimental`: 실험적 기능
 
-### 버전 관리
+</details>
+
+<details>
+<summary>📝 버전 관리</summary>
 
 #### Semantic Versioning
 
@@ -934,11 +1045,14 @@ MAJOR.MINOR.PATCH
 - 매치메이킹 타임아웃 이슈 해결
 ```
 
+</details>
+
 ---
 
 ## 🔧 문제 해결
 
-### 일반적인 문제
+<details>
+<summary>🚨 일반적인 문제</summary>
 
 #### 1. Steam 연결 실패
 
@@ -982,7 +1096,10 @@ InvalidKeyException: key not found
 2. "Clean Build" → "New Build"
 3. 로컬 서버 실행 확인
 
-### 성능 문제
+</details>
+
+<details>
+<summary>📊 성능 문제</summary>
 
 #### FPS 저하
 
@@ -1012,7 +1129,10 @@ InvalidKeyException: key not found
    - 데이터 압축 적용
    - Interest Management 구현
 
-### 디버깅 도구
+</details>
+
+<details>
+<summary>🛠️ 디버깅 도구</summary>
 
 #### 1. 커스텀 디버그 콘솔
 
@@ -1042,11 +1162,14 @@ FishNet > Network Manager > Transporting
 - Simulate Out of Order: 10%
 ```
 
+</details>
+
 ---
 
 ## 🤝 기여 가이드
 
-### 개발 프로세스
+<details>
+<summary>🔄 개발 프로세스</summary>
 
 #### 1. 브랜치 전략
 
@@ -1091,6 +1214,8 @@ test(quest): 퀘스트 완료 테스트 추가
 ## 스크린샷
 (해당되는 경우)
 ```
+
+</details>
 
 ### 코드 리뷰 체크리스트
 
