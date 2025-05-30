@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Unity-6000.0.47f1-black?style=for-the-badge&logo=unity" alt="Unity Version">
-  <img src="https://img.shields.io/badge/FishNet-blue?style=for-the-badge" alt="FishNet Pro">
+  <img src="https://img.shields.io/badge/FishNet-Free-blue?style=for-the-badge" alt="FishNet Pro">
   <img src="https://img.shields.io/badge/Steam-Integrated-1b2838?style=for-the-badge&logo=steam" alt="Steam Integration">
   <img src="https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows" alt="Platform">
 </p>
